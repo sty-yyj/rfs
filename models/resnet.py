@@ -149,7 +149,7 @@ class BasicBlock(nn.Module):
 class ResNet(nn.Module):
 
     def __init__(self, block, n_blocks, keep_prob=1.0, avg_pool=False, drop_rate=0.0,
-                 dropblock_size=5, num_classes=-1, use_se=False):
+                 dropblock_size=5, num_classes=-1, use_se=False, freeze=False):
         super(ResNet, self).__init__()
 
         self.inplanes = 3
@@ -180,6 +180,9 @@ class ResNet(nn.Module):
         self.num_classes = num_classes
         if self.num_classes > 0:
             self.classifier = nn.Linear(640, self.num_classes)
+        
+        if freeze:
+            self._freeze_stage()
 
     def _make_layer(self, block, n_block, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1):
         downsample = None
@@ -207,6 +210,13 @@ class ResNet(nn.Module):
             layers.append(layer)
 
         return nn.Sequential(*layers)
+    
+    def _freeze_stage(self):
+        layers = [self.layer1, self.layer2, self.layer3, self.layer4]
+        for layer in layers:
+            layer.eval()
+            for param in layer.parameters():
+                param.requires_grad = False
 
     def forward(self, x, is_feat=False):
         x = self.layer1(x)

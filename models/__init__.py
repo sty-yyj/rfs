@@ -5,6 +5,8 @@ from .wresnet import wrn_28_10
 
 from .resnet_new import resnet50
 
+from .attention_module import make_model
+
 model_pool = [
     'convnet4',
     'resnet12',
@@ -19,3 +21,5 @@ model_dict = {
     'seresnet12': seresnet12,
     'resnet50': resnet50,
 }
+
+__all__ = ['make_model']

@@ -16,7 +16,7 @@ from dataset.tiered_imagenet import MetaTieredImageNet
 from dataset.cifar import MetaCIFAR100
 from dataset.transform_cfg import transforms_test_options, transforms_list
 
-from eval.meta_eval import meta_test
+from eval.meta_train import meta_train
 
 
 def parse_option():
@@ -79,10 +79,10 @@ def main():
 
     if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_test_options[opt.transform]
-        meta_testloader = DataLoader(MetaImageNet(args=opt, partition='test',
-                                                  train_transform=train_trans,
-                                                  test_transform=test_trans,
-                                                  fix_seed=False),
+        meta_trainloader = DataLoader(MetaImageNet(args=opt, partition='train',
+                                                   train_transform=train_trans,
+                                                   test_transform=test_trans,
+                                                   fix_seed=False),
                                      batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
                                      num_workers=opt.num_workers)
         meta_valloader = DataLoader(MetaImageNet(args=opt, partition='val',
@@ -165,9 +165,9 @@ def main():
     # print('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
 
     start = time.time()
-    test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False)
+    meta_train(model, meta_trainloader)
     test_time = time.time() - start
-    print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
+    print('time: {:.1f}'.format(test_time))
 
 
 if __name__ == '__main__':

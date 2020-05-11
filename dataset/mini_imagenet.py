@@ -94,7 +94,10 @@ class ImageNet(Dataset):
 class MetaImageNet(ImageNet):
     
     def __init__(self, args, partition='train', train_transform=None, test_transform=None, fix_seed=True):
-        super(MetaImageNet, self).__init__(args, partition, False)
+        pretrain = False
+        if partition == 'train':
+            pretrain = True
+        super(MetaImageNet, self).__init__(args, partition, pretrain)
         self.fix_seed = fix_seed
         self.n_ways = args.n_ways
         self.n_shots = args.n_shots
@@ -143,11 +146,15 @@ class MetaImageNet(ImageNet):
             imgs = np.asarray(self.data[cls]).astype('uint8')
             support_xs_ids_sampled = np.random.choice(range(imgs.shape[0]), self.n_shots, False)
             support_xs.append(imgs[support_xs_ids_sampled])
-            support_ys.append([idx] * self.n_shots)
             query_xs_ids = np.setxor1d(np.arange(imgs.shape[0]), support_xs_ids_sampled)
             query_xs_ids = np.random.choice(query_xs_ids, self.n_queries, False)
             query_xs.append(imgs[query_xs_ids])
-            query_ys.append([idx] * query_xs_ids.shape[0])
+            if self.partition == 'train':
+                support_ys.append([cls] * self.n_shots)
+                query_ys.append([cls] * query_xs_ids.shape[0])
+            else:
+                support_ys.append([idx] * self.n_shots)
+                query_ys.append([idx] * query_xs_ids.shape[0])
         support_xs, support_ys, query_xs, query_ys = np.array(support_xs), np.array(support_ys), np.array(
             query_xs), np.array(query_ys)
         num_ways, n_queries_per_way, height, width, channel = query_xs.shape
@@ -176,7 +183,7 @@ if __name__ == '__main__':
     args.n_ways = 5
     args.n_shots = 1
     args.n_queries = 12
-    args.data_root = 'data'
+    args.data_root = 'data/miniImageNet'
     args.data_aug = True
     args.n_test_runs = 5
     args.n_aug_support_samples = 1

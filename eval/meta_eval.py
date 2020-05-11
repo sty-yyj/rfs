@@ -6,11 +6,14 @@ from scipy.stats import t
 from tqdm import tqdm
 
 import torch
+import torch.backends.cudnn as cudnn
 from sklearn import metrics
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+
+from models import make_model
 
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -30,6 +33,16 @@ def normalize(x):
 def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
     net = net.eval()
     acc = []
+    d_model = 640
+
+    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0)
+    fusion_module.eval()
+    ckpt = torch.load('fusion/ckpt_epoch_100.pth')
+    fusion_module.load_state_dict(ckpt['model'])
+
+    if torch.cuda.is_available():
+        fusion_module = fusion_module.cuda()
+        cudnn.benchmark = True
 
     with torch.no_grad():
         for idx, data in tqdm(enumerate(testloader)):
@@ -53,8 +66,20 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
                 support_features = normalize(support_features)
                 query_features = normalize(query_features)
 
+            inputs = []
+            for k in range(query_features.size(0)):
+                inputs.append(torch.cat((query_features[k, None], support_features)))
+            inputs = torch.stack(inputs)
+
+            outs = fusion_module(inputs)
+            # res = fusion_module(inputs)
+            # outs = res[:, 0, :]
+            # s_ys = res[:, 1:, :].mean(dim=0)
+
             support_features = support_features.detach().cpu().numpy()
             query_features = query_features.detach().cpu().numpy()
+            outs = outs.detach().cpu().numpy()
+            # s_ys = s_ys.detach().cpu().numpy()
 
             support_ys = support_ys.view(-1).numpy()
             query_ys = query_ys.view(-1).numpy()
@@ -63,7 +88,9 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
                 clf = LogisticRegression(random_state=0, solver='lbfgs', max_iter=1000,
                                          multi_class='multinomial')
                 clf.fit(support_features, support_ys)
-                query_ys_pred = clf.predict(query_features)
+                # clf.fit(s_ys, support_ys)
+                # query_ys_pred = clf.predict(query_features)
+                query_ys_pred = clf.predict(outs)
             elif classifier == 'NN':
                 query_ys_pred = NN(support_features, support_ys, query_features)
             elif classifier == 'Cosine':
