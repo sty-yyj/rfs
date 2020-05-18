@@ -4,6 +4,7 @@ from .resnet import seresnet12
 from .wresnet import wrn_28_10
 
 from .resnet_new import resnet50
+from .modules import DynamicConv
 
 
 model_pool = [
@@ -25,4 +26,4 @@ from .util import special_softmax
 from .attention_module import make_model
 from .context_block import ContextBlock
 
-__all__ = ['make_model', 'special_softmax', 'ContextBlock']
+__all__ = ['make_model', 'special_softmax', 'ContextBlock', 'DynamicConv']

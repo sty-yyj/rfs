@@ -59,8 +59,8 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
     top1 = AverageMeter()
     top5 = AverageMeter()
 
-    # fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
-    fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
+    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    # fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(fusion_module.parameters(),
                           lr=0.01,
@@ -120,7 +120,7 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
                 'epoch': i+1,
                 'model': fusion_module.state_dict()
             }
-            save_file = os.path.join('fusion', 'gc*_ckpt_epoch_{epoch}.pth'.format(epoch=i+1))
+            save_file = os.path.join('fusion', 'dynamic_ckpt_epoch_{epoch}.pth'.format(epoch=i+1))
             torch.save(state, save_file)
         # if is_norm:
         #     support_features = normalize(support_features)

@@ -35,10 +35,10 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
     acc = []
     d_model = 640
 
-    # fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
-    fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
+    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    # fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
     fusion_module.eval()
-    ckpt = torch.load('fusion/gc*_ckpt_epoch_10.pth')
+    ckpt = torch.load('fusion/dynamic_ckpt_epoch_80.pth')
     fusion_module.load_state_dict(ckpt['model'])
 
     if torch.cuda.is_available():
