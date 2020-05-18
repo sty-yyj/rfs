@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-from models import make_model
+from models import make_model, ContextBlock
 
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -35,9 +35,10 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
     acc = []
     d_model = 640
 
-    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0)
+    # fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
     fusion_module.eval()
-    ckpt = torch.load('fusion/ckpt_epoch_100.pth')
+    ckpt = torch.load('fusion/gc*_ckpt_epoch_10.pth')
     fusion_module.load_state_dict(ckpt['model'])
 
     if torch.cuda.is_available():
@@ -93,8 +94,10 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
                 query_ys_pred = clf.predict(outs)
             elif classifier == 'NN':
                 query_ys_pred = NN(support_features, support_ys, query_features)
+                # query_ys_pred = NN(support_features, support_ys, outs)
             elif classifier == 'Cosine':
-                query_ys_pred = Cosine(support_features, support_ys, query_features)
+                # query_ys_pred = Cosine(support_features, support_ys, query_features)
+                query_ys_pred = Cosine(support_features, support_ys, outs)
             else:
                 raise NotImplementedError('classifier not supported: {}'.format(classifier))
 

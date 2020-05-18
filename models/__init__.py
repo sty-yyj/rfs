@@ -5,7 +5,6 @@ from .wresnet import wrn_28_10
 
 from .resnet_new import resnet50
 
-from .attention_module import make_model
 
 model_pool = [
     'convnet4',
@@ -22,4 +21,8 @@ model_dict = {
     'resnet50': resnet50,
 }
 
-__all__ = ['make_model']
+from .util import special_softmax
+from .attention_module import make_model
+from .context_block import ContextBlock
+
+__all__ = ['make_model', 'special_softmax', 'ContextBlock']

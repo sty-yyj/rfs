@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 
+import torch
 from . import model_dict
 
 
@@ -43,3 +44,10 @@ def get_teacher_name(model_path):
             return segments[0]
         else:
             return segments[0] + '_' + segments[1] + '_' + segments[2]
+
+
+def special_softmax(weights, p=0.6):
+    w1, w2 = weights[:, 0, None], weights[:, 1:]
+    w1 = w1 * p
+    w2 = w2.softmax(dim=1)
+    return torch.cat((w1, w2*(1-w1)), dim=1)

@@ -5,7 +5,9 @@ import torch.nn.functional as F
 import copy
 import math
 
+from . import special_softmax
 pp_atten = None
+
 
 def clones(module, N):
     "Produce N identical layers."
@@ -47,35 +49,35 @@ def attention(query, key, value, mask=None, dropout=None):
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     if mask is not None:
         scores = scores.masked_fill(mask == 0, -1e9)
+    # 第一个权重乘以惩罚系数
+    # scores[:, :, 0, 0] = scores[:, :, 0, 0] * 0.75
     p_attn = F.softmax(scores, dim=-1)
+    # 引入特殊softmax进行训练，以防对自身权重过大
+    # new_w = special_softmax(p_attn[:, :, 0, :].squeeze(), 0.98)
+    # p_attn[:, :, 0, :] = new_w.unsqueeze(dim=1)
     # 设置取相关性前6的系数
-    _, inds = p_attn.topk(6)
+    w, inds = p_attn.topk(6)
+    # w = w[:, :, 0, :].squeeze()
+    # w = special_softmax(w, 0.9)
     inds = inds[:, :, 0, :].squeeze()
     reverse_mask = torch.ones((p_attn.size(0), p_attn.size(-1))).cuda()
+    temp = p_attn[:, :, 0, :].squeeze()
     for i in range(p_attn.size(0)):
         reverse_mask[i, inds[i]] = 0
-    temp = p_attn[:, :, 0, :].squeeze()
+        # temp[i, inds[i]] = w[i]
     temp = temp.masked_fill(reverse_mask.bool(), 0)
 
-    # temp[:, 0] *= 0.6
-    # temp = F.softmax(temp, dim=-1)
-    # for i in range(75):
-    #     print(temp[i])
-    #     if i+1 % 15 == 0:
-    #         print('next')
     temp = temp.unsqueeze(1)
     p_attn[:, :, 0, :] = temp
-    # p_attn[:, :, 0, 0] *= 0.6
 
-    # # 设置阈值1e-2
+    # 设置阈值1e-2
     # thr = 0.1
     # p_attn[p_attn<thr] = 0
-
 
     if dropout is not None:
         p_attn = dropout(p_attn)
     global pp_atten
-    pp_atten = p_attn.squeeze()
+    pp_atten = p_attn.mean(dim=1)
     return torch.matmul(p_attn, value), p_attn
 
 

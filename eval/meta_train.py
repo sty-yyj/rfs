@@ -18,7 +18,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-from models import make_model
+from models import make_model, ContextBlock
 from util import accuracy, AverageMeter
 
 
@@ -59,7 +59,8 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
     top1 = AverageMeter()
     top5 = AverageMeter()
 
-    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    # fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(fusion_module.parameters(),
                           lr=0.01,
@@ -92,7 +93,7 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
                 inputs.append(torch.cat((query_features[k, None], support_features)))
             inputs = torch.stack(inputs)
 
-            outs = fusion_module(inputs)[:, 0, :]
+            outs = fusion_module(inputs)
             pred_querys = net.classifier(outs)
 
             query_ys = query_ys.view(-1)
@@ -119,7 +120,7 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
                 'epoch': i+1,
                 'model': fusion_module.state_dict()
             }
-            save_file = os.path.join('fusion', 'ckpt_epoch_{epoch}.pth'.format(epoch=i+1))
+            save_file = os.path.join('fusion', 'gc*_ckpt_epoch_{epoch}.pth'.format(epoch=i+1))
             torch.save(state, save_file)
         # if is_norm:
         #     support_features = normalize(support_features)
