@@ -97,7 +97,7 @@ def main():
             n_cls = 64
     elif opt.dataset == 'tieredImageNet':
         train_trans, test_trans = transforms_test_options[opt.transform]
-        meta_testloader = DataLoader(MetaTieredImageNet(args=opt, partition='test',
+        meta_trainloader = DataLoader(MetaTieredImageNet(args=opt, partition='train',
                                                         train_transform=train_trans,
                                                         test_transform=test_trans,
                                                         fix_seed=False),
@@ -115,7 +115,7 @@ def main():
             n_cls = 351
     elif opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
         train_trans, test_trans = transforms_test_options['D']
-        meta_testloader = DataLoader(MetaCIFAR100(args=opt, partition='test',
+        meta_trainloader = DataLoader(MetaCIFAR100(args=opt, partition='train',
                                                   train_transform=train_trans,
                                                   test_transform=test_trans,
                                                   fix_seed=False),

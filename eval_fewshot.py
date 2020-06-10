@@ -27,6 +27,7 @@ def parse_option():
     parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
     # parser.add_argument('--model_path', type=str, default=None, help='absolute path to .pth model')
     parser.add_argument('--model_path', type=str, default='works/resnet12_trainval/dis/dis_ckpt_epoch_100.pth', help='absolute path to .pth model')
+    # parser.add_argument('--model_path', type=str, default='models_dis/cifar/resnet12_trainval/ckpt_epoch_100.pth', help='absolute path to .pth model')
 
     # dataset
     parser.add_argument('--dataset', type=str, default='miniImageNet', choices=['miniImageNet', 'tieredImageNet',

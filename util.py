@@ -60,6 +60,7 @@ class AverageMeter(object):
 
 def adjust_learning_rate(epoch, opt, optimizer):
     """Sets the learning rate to the initial LR decayed by decay rate every steep step"""
+    print(opt)
     steps = np.sum(epoch > np.asarray(opt.lr_decay_epochs))
     if steps > 0:
         new_lr = opt.learning_rate * (opt.lr_decay_rate ** steps)

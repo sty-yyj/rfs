@@ -127,4 +127,5 @@ class ContextBlock(nn.Module):
             channel_add_term = self.channel_add_conv(context).squeeze(-1)
             out = out + channel_add_term
 
-        return 0.8 * x[:, 0, :] + 0.2 * out.mean(dim=1)
+        return 0.9 * x[:, 0, :] + 0.1 * out.mean(dim=1)
+        # return out.mean(dim=1)

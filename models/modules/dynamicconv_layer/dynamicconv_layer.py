@@ -116,7 +116,7 @@ class DynamicconvLayer(nn.Module):
         else:
             weight = self.weight_linear(x).view(T, B, H, K)
             if self.weight_softmax:
-                weight = F.softmax(weight, dim=-1)
+                weight = F.softmax(weight, dim=1)
             if self.weight_dropout:
                 weight = F.dropout(weight, self.weight_dropout, training=self.training)
 

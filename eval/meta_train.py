@@ -19,7 +19,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 from models import make_model, ContextBlock
-from util import accuracy, AverageMeter
+from util import accuracy, AverageMeter, adjust_learning_rate
 
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -59,11 +59,11 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
     top1 = AverageMeter()
     top5 = AverageMeter()
 
-    fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
-    # fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
+    # fusion_module = make_model(1, d_model, 4 * d_model, 1, 0.1)
+    fusion_module = ContextBlock(26, 2, fusion_types=('channel_mul', ))
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(fusion_module.parameters(),
-                          lr=0.01,
+                          lr=0.05,
                           momentum=0.9,
                           weight_decay=5e-9)
 
@@ -72,8 +72,14 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
         net.cuda()
         cudnn.benchmark = True
 
+    opt = dict()
+    opt["lr_decay_epochs"] = [60, 80]
+    opt["learning_rate"] = 0.05
+    opt["lr_decay_rate"] = 0.1
+
     # 100个epoch
     for i in range(100):
+        # adjust_learning_rate(i+1, opt, optimizer)
         for idx, data in tqdm(enumerate(trainloader)):
             support_xs, support_ys, query_xs, query_ys = data
             support_xs = support_xs.cuda()
@@ -120,7 +126,7 @@ def meta_train(net, trainloader, use_logit=True, is_norm=True, classifier='LR'):
                 'epoch': i+1,
                 'model': fusion_module.state_dict()
             }
-            save_file = os.path.join('fusion', 'dynamic_ckpt_epoch_{epoch}.pth'.format(epoch=i+1))
+            save_file = os.path.join('fusion/cifar', 'gcckpt_epoch_{epoch}.pth'.format(epoch=i+1))
             torch.save(state, save_file)
         # if is_norm:
         #     support_features = normalize(support_features)

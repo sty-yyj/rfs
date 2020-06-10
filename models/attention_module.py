@@ -53,6 +53,9 @@ def attention(query, key, value, mask=None, dropout=None):
     # 第一个权重乘以惩罚系数
     # scores[:, :, 0, 0] = scores[:, :, 0, 0] * 0.75
     p_attn = F.softmax(scores, dim=-1)
+    import numpy as np
+    xx = p_attn.cpu().numpy()
+    np.save('weight', xx)
     # 引入特殊softmax进行训练，以防对自身权重过大
     # new_w = special_softmax(p_attn[:, :, 0, :].squeeze(), 0.98)
     # p_attn[:, :, 0, :] = new_w.unsqueeze(dim=1)
@@ -77,8 +80,8 @@ def attention(query, key, value, mask=None, dropout=None):
 
     if dropout is not None:
         p_attn = dropout(p_attn)
-    # global pp_atten
-    # pp_atten = p_attn.mean(dim=1)
+    global pp_atten
+    pp_atten = p_attn.mean(dim=1)
     return torch.matmul(p_attn, value), p_attn
 
 
@@ -139,10 +142,8 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, mask):
         "Follow Figure 1 (left) for connections."
-        # x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
-        # x = self.sublayer[0](x, lambda x: self.self_attn(x))
-        # return self.sublayer[1](x, self.feed_forward)
-        return self.self_attn(x)
+        x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
+        return self.sublayer[1](x, self.feed_forward)
 
 
 class fusion_module(nn.Module):
@@ -157,19 +158,17 @@ class fusion_module(nn.Module):
         tt = x
         for layer in self.layers:
             tt = layer(tt, mask)
-        # return torch.matmul(pp_atten, x)[:, 0, :]
-        return 0.8 * x[:, 0, :] + 0.2 * tt.mean(dim=1)
+        return torch.matmul(pp_atten, x)[:, 0, :]
+        # return 0.8 * x[:, 0, :] + 0.2 * tt.mean(dim=1)
         # for layer in self.layers:
         #     x = layer(x, mask)
-        # return (0.9*tt + 0.1*self.norm(x))[:, 0, :]
         # return self.norm(x)[:, 0, :]
 
 
 def make_model(N=6, d_model=512, d_ff=2048, h=8, dropout=0.1):
     "Helper: Construct a model from hyperparameters."
     c = copy.deepcopy
-    # attn = MultiHeadedAttention(h, d_model)
-    attn = DynamicConv(d_model, with_linear=True, padding_l=1, weight_softmax=True)
+    attn = MultiHeadedAttention(h, d_model)
     ff = PositionwiseFeedForward(d_model, d_ff, dropout)
     layer = EncoderLayer(d_model, c(attn), c(ff), dropout)
     model = fusion_module(layer, N)
